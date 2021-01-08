@@ -5,7 +5,7 @@ final class PgSQL {
 
 	public function __construct($hostname, $username, $password, $database, $port = '5432') {
 		try {
-			$pg = @pg_connect('hostname=' . $hostname . ' port=' . $port .  ' username=' . $username . ' password='	. $password . ' database=' . $database);
+			$pg = @pg_connect('host=' . $hostname . ' port=' . $port .  ' user=' . $username . ' password='	. $password . ' dbname=' . $database);
 		} catch (\Exception $e) {
 			throw new \Exception('Error: Could not make a database link using ' . $username . '@' . $hostname);
 		}
@@ -17,6 +17,22 @@ final class PgSQL {
 	}
 
 	public function query($sql) {
+		$sql = str_replace(['`', ' time_zone ', ' INTERVAL 1 HOUR', '0000-00-00', 'YEAR(CURDATE())'], ['"', ' timezone ', " INTERVAL '1 HOUR'", '1970-01-01', "date_part('year', CURRENT_DATE)"], $sql);
+		$pos = strpos($sql, 'LIMIT ');
+		while ($pos !== false) {
+			$pos += strlen('LIMIT ');
+			while ($pos < strlen($sql)) {
+				if ($sql[$pos] === ',') {
+					$sql = substr($sql, 0, $pos) . ' OFFSET ' . substr($sql, $pos + 1);
+					break;
+				} elseif (!in_array($sql[$pos], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])) {
+					break;
+				}
+				$pos++;
+			}
+
+			$pos = strpos($sql, 'LIMIT ', $pos);
+		}
 		$resource = pg_query($this->connection, $sql);
 
 		if ($resource) {
@@ -66,9 +82,7 @@ final class PgSQL {
 	}
 
 	public function getLastId() {
-		$query = $this->query("SELECT LASTVAL() AS `id`");
-
-		return $query->row['id'];
+		trigger_error('Not supported ' . __METHOD__ . '. Instead use RETURNING in INSERT or UPDATE sql');
 	}
 
 	public function __destruct() {

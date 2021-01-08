@@ -2053,8 +2053,7 @@ function db_schema() {
 			],
 			[
 				'name' => 'description',
-				'type' => 'text',
-				'not_null' => true
+				'type' => 'text'
 			],
 			[
 				'name' => 'trigger',
